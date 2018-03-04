@@ -37,10 +37,7 @@ void ConfigureInterrupts() {
 }
 
 //char (*__kaboom)[sizeof(float16_t)] = 1;
-u_int32_t LastSyncPulseTime = 0;
-u_int32_t SweepSyncStartTime = 0;
-u_int8_t NextSweepSource = 0;
-u_int8_t NextSweepAxis = 0;
+
 
 void Setup() {
     Serial.begin(115200);
@@ -58,6 +55,11 @@ void Setup() {
 
 
 void Loop() {
+    static u_int32_t LastSyncPulseTime = 0;
+    static u_int32_t SweepSyncStartTime = 0;
+    static u_int8_t NextSweepSource = 0;
+    static u_int8_t NextSweepAxis = 0;
+
     Pulse *EarliestSyncDetectedSource = NULL;
     u_int32_t EarlyTrack = 0;
     u_int32_t BaseTime = CURRENT_TIME;
@@ -77,7 +79,6 @@ void Loop() {
 
 
     if (EarliestSyncDetectedSource != NULL) {
-        //Pulse *PulsePointer = &Nodes[EarliestSyncDetectedSource].Waveform[Nodes[EarliestSyncDetectedSource].LastProcessPointer()];//.LastProcessPointer();
         if (!IN_RANGE(0, EarliestSyncDetectedSource->RisingEdgeTicks -
                          LastSyncPulseTime, PULSETRAIN_SYNC_DISCREPANCY)) {
 

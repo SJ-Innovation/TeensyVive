@@ -12,7 +12,7 @@ def after_build(source,target,env):
                     os.remove("Dumped.txt")
                 except:
                     pass
-                os.system("objdump.exe "+path+" -d -s --demangle > Dumped.asm")
+                os.system("objdump.exe "+path+" -dSC > Dumped.asm")
                 print("Dumped ASM")
 
 if __name__ == "__main__":

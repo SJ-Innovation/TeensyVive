@@ -93,21 +93,19 @@ void SensorNode::FallingEdge(u_int32_t TimeTicks) {
 }
 
 Pulse* SensorNode::PulseHandler() {
-
-    Waveform[ProcessPointer].PulseDurationTicks =
-            Waveform[ProcessPointer].FallingEdgeTicks - Waveform[ProcessPointer].RisingEdgeTicks;
-    //Waveform[ProcessPointer].LastPulseToThisPulseTicks =
-        //    Waveform[ProcessPointer].RisingEdgeTicks - Waveform[LastProcessPointer()].RisingEdgeTicks;
-    Waveform[WaveformPointer].IsSyncPulse = (bool)IN_RANGE(FLASH_PULSE_LENGTH_TICKS_MIN,
-                                                     Waveform[ProcessPointer].PulseDurationTicks,
+    Pulse *LatestPulse = &Waveform[ProcessPointer];
+    LatestPulse->PulseDurationTicks =
+            LatestPulse->FallingEdgeTicks - LatestPulse->RisingEdgeTicks;
+    LatestPulse->IsSyncPulse = (bool)IN_RANGE(FLASH_PULSE_LENGTH_TICKS_MIN,
+                                                     LatestPulse->PulseDurationTicks,
                                                      FLASH_PULSE_LENGTH_TICKS_MAX);
-    Waveform[WaveformPointer].IsSweepPulse = (bool)IN_RANGE(SWEEP_PULSE_LENGTH_TICKS_MIN,
-                                                      Waveform[ProcessPointer].PulseDurationTicks,
+    LatestPulse->IsSweepPulse = (bool)IN_RANGE(SWEEP_PULSE_LENGTH_TICKS_MIN,
+                                                      LatestPulse->PulseDurationTicks,
                                                       SWEEP_PULSE_LENGTH_TICKS_MAX);
-    Waveform[ProcessPointer].Valid = true;
-    Waveform[ProcessPointer].ReadOut = false;
+    LatestPulse->Valid = true;
+    LatestPulse->ReadOut = false;
     IncProcessPointer();
-    return &Waveform[LastProcessPointer()];
+    return LatestPulse;
 }
 
 u_int32_t PulseAge(Pulse &TestPulse) {
@@ -115,10 +113,9 @@ u_int32_t PulseAge(Pulse &TestPulse) {
 }
 
 void SensorNode::CheckAndHandleSweep(u_int8_t SweepSource, u_int8_t SweepAxis, u_int32_t SweepStartTime) {
-    Pulse* LastPulse = &Waveform[WaveformPointer];
+    Pulse* LastPulse = &Waveform[LastProcessPointer()];
     if (LastPulse->Valid and LastPulse->IsSweepPulse and not LastPulse->ReadOut){
         LastPulse->ReadOut = true;
         Angles[SweepSource][SweepAxis] = TICKS_TO_RADIANS(LastPulse->RisingEdgeTicks-SweepStartTime);
-
     }
 }

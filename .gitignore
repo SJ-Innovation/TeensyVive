@@ -4,3 +4,7 @@ CMakeListsPrivate.txt
 .idea/workspace.xml
 cmake-build-debug/
 include/
+/CMakeLists.txt
+/Dumped.asm
+/readelf.exe
+/objdump.exe
