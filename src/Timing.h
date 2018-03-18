@@ -13,14 +13,14 @@
 #if BETTER_TIMER == 3
 
 
-#define TICKS_PER_MICROSECOND (u_int32_t)((u_int32_t)F_BUS/(u_int32_t)1000000) // TODO CHANGE F_BUS for OC if REQUIRED
-#define US_TO_TICKS(x) (x*TICKS_PER_MICROSECOND)
-#define TICKS_TO_US(x) (x/TICKS_PER_MICROSECOND)
-#define IN_RANGE(Low, Value, High) ((Value >= Low && Value <= High) ? 1:0)
-#define CURRENT_TIME (UINT32_MAX - PIT_CVAL0)
+#define TICKS_PER_MICROSECOND ((u_int32_t)((u_int32_t)F_BUS/(u_int32_t)1000000)) // TODO CHANGE F_BUS for OC if REQUIRED
+#define US_TO_TICKS(x) (((x)*TICKS_PER_MICROSECOND))
+#define TICKS_TO_US(x) (((x)/TICKS_PER_MICROSECOND))
+#define IN_RANGE(Low, Value, High) (((Value) >= (Low) && (Value) <= (High)) ? 1:0)
+#define CURRENT_TIME ((UINT32_MAX - PIT_CVAL0))
 
 #define VIVE_STANDARD_TICKS_PER_US 48
-#define TICKS_TO_VIVE_STANDARD(x) (x*VIVE_STANDARD_TICKS_PER_US/TICKS_PER_MICROSECOND)
+#define TICKS_TO_VIVE_STANDARD(x) ((x)*VIVE_STANDARD_TICKS_PER_US/TICKS_PER_MICROSECOND)
 
 
 #else

@@ -17,14 +17,15 @@ struct Pulse {
     u_int32_t PulseDurationTicks; //Rising to falling
     //u_int32_t LastPulseToThisPulseTicks;
     bool Valid;
-    bool IsSyncPulse;
-    bool IsSweepPulse;
+    bool IsCertainSyncPulse;
+    bool IsCertainSweepPulse;
+    bool IsUncertainShortPulse;
     bool ReadOut;
 };
 
 class SensorNode {
 public:
-    SensorNode(u_int8_t InputPin);
+    SensorNode(SensorPinData_t PinData);
 
     ~SensorNode();
 
@@ -34,7 +35,7 @@ public:
 
     void FallingEdge(u_int32_t TimeTicks);
 
-    u_int8_t GetPin();
+    u_int8_t GetPulsePin();
 
     bool NeedsPulseHandling();
 
@@ -45,11 +46,15 @@ public:
     Pulse Waveform[WAVEFORM_SIZE];
 
     int8_t ProcessPointerOffset(int8_t Offset);
-    void CheckAndHandleSweep(u_int8_t SweepSource,u_int8_t SweepAxis,u_int32_t SweepStartTime);
+
+    void CheckAndHandleSweep(u_int8_t SweepSource, u_int8_t SweepAxis, u_int32_t SweepStartTime,
+                             u_int8_t CurrentStationLock);
     float Angles[2][2];
     float Location[3];
 
     int8_t LastProcessPointer();
+
+    void SetLEDState(int LEDState);
 
 protected:
 
@@ -70,7 +75,7 @@ private:
 
     int8_t LastWaveformPointer();
 
-    int _InputPin;
+    SensorPinData_t _PinData;
 };
 
 

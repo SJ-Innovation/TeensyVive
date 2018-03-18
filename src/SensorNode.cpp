@@ -3,10 +3,53 @@
 //
 
 #include "SensorNode.h"
+#include "config.h"
 
 
-SensorNode::SensorNode(u_int8_t InputPin) {
-    _InputPin = InputPin;
+void SensorNode::SetLEDState(int LEDState) {
+    static int CurrentLEDState = LED_OFF;
+    if (LEDState != CurrentLEDState) {
+        Serial.println("Set");
+        switch (LEDState) {
+            case LED_OFF:
+                pinMode(_PinData.LED1Pin, INPUT);
+                pinMode(_PinData.LED2Pin, INPUT);
+                digitalWrite(_PinData.LED1Pin, LOW);
+                digitalWrite(_PinData.LED2Pin, LOW);
+                break;
+            case LED_RED:
+                pinMode(_PinData.LED1Pin, OUTPUT);
+                pinMode(_PinData.LED2Pin, INPUT);
+                digitalWrite(_PinData.LED1Pin, LOW);
+                digitalWrite(_PinData.LED2Pin, LOW);
+                break;
+            case LED_RED_YELLOW:
+                pinMode(_PinData.LED1Pin, OUTPUT);
+                pinMode(_PinData.LED2Pin, OUTPUT);
+                digitalWrite(_PinData.LED1Pin, HIGH);
+                digitalWrite(_PinData.LED2Pin, LOW);
+                break;
+            case LED_GREEN:
+                pinMode(_PinData.LED1Pin, INPUT);
+                pinMode(_PinData.LED2Pin, OUTPUT);
+                digitalWrite(_PinData.LED1Pin, LOW);
+                digitalWrite(_PinData.LED2Pin, HIGH);
+                break;
+            case LED_RED_GREEN:
+                pinMode(_PinData.LED1Pin, OUTPUT);
+                pinMode(_PinData.LED2Pin, OUTPUT);
+                digitalWrite(_PinData.LED1Pin, LOW);
+                digitalWrite(_PinData.LED2Pin, HIGH);
+                break;
+        }
+        CurrentLEDState = LEDState;
+    }
+
+}
+
+
+SensorNode::SensorNode(SensorPinData_t PinData) {
+    _PinData = PinData;
 }
 
 bool SensorNode::NeedsPulseHandling() {
@@ -55,8 +98,10 @@ int8_t SensorNode::ProcessPointerOffset(int8_t Offset) {
 
 void SensorNode::Init() {
     Serial.print("Sensor On Pin ");
-    Serial.print(_InputPin);
-    pinMode(_InputPin, INPUT);
+    Serial.print(_PinData.PulsePin);
+    pinMode(_PinData.PulsePin, INPUT);
+    pinMode(_PinData.LED1Pin, INPUT); //For tristate.
+    pinMode(_PinData.LED2Pin, INPUT);
     WaveformPointer = 1;
     ProcessPointer = 0;
     Angles[STATION_A][HORZ] = 0;
@@ -76,32 +121,40 @@ SensorNode::~SensorNode() {
 
 }
 
-u_int8_t SensorNode::GetPin() {
-    return _InputPin;
+u_int8_t SensorNode::GetPulsePin() {
+    return _PinData.PulsePin;
 }
 
 void SensorNode::RisingEdge(u_int32_t TimeTicks) {
     IncWaveformPointer();
     Waveform[WaveformPointer].Valid = false;
     Waveform[WaveformPointer].RisingEdgeTicks = TimeTicks;
-
 }
 
 void SensorNode::FallingEdge(u_int32_t TimeTicks) {
     Waveform[WaveformPointer].FallingEdgeTicks = TimeTicks;
     Waveform[WaveformPointer].Valid = false;
+
 }
 
-Pulse* SensorNode::PulseHandler() {
+Pulse *SensorNode::PulseHandler() {
     Pulse *LatestPulse = &Waveform[ProcessPointer];
-    LatestPulse->PulseDurationTicks =
-            LatestPulse->FallingEdgeTicks - LatestPulse->RisingEdgeTicks;
-    LatestPulse->IsSyncPulse = (bool)IN_RANGE(FLASH_PULSE_LENGTH_TICKS_MIN,
-                                                     LatestPulse->PulseDurationTicks,
-                                                     FLASH_PULSE_LENGTH_TICKS_MAX);
-    LatestPulse->IsSweepPulse = (bool)IN_RANGE(SWEEP_PULSE_LENGTH_TICKS_MIN,
-                                                      LatestPulse->PulseDurationTicks,
-                                                      SWEEP_PULSE_LENGTH_TICKS_MAX);
+    if (LatestPulse->RisingEdgeTicks >
+        LatestPulse->FallingEdgeTicks) { // If theyre reversed (weird Interrupt behaviour)
+        LatestPulse->PulseDurationTicks = 0;
+        LatestPulse->IsUncertainShortPulse = true;
+    }
+    else {
+        LatestPulse->IsUncertainShortPulse = false;
+        LatestPulse->PulseDurationTicks =
+                LatestPulse->FallingEdgeTicks - LatestPulse->RisingEdgeTicks;
+        LatestPulse->IsCertainSyncPulse = (bool) IN_RANGE(FLASH_PULSE_LENGTH_TICKS_MIN,
+                                                          LatestPulse->PulseDurationTicks,
+                                                          FLASH_PULSE_LENGTH_TICKS_MAX);
+        LatestPulse->IsCertainSweepPulse = (bool) IN_RANGE(SWEEP_PULSE_LENGTH_TICKS_MIN,
+                                                           LatestPulse->PulseDurationTicks,
+                                                           SWEEP_PULSE_LENGTH_TICKS_MAX);
+    }
     LatestPulse->Valid = true;
     LatestPulse->ReadOut = false;
     IncProcessPointer();
@@ -112,10 +165,21 @@ u_int32_t PulseAge(Pulse &TestPulse) {
     return CURRENT_TIME - TestPulse.RisingEdgeTicks;
 }
 
-void SensorNode::CheckAndHandleSweep(u_int8_t SweepSource, u_int8_t SweepAxis, u_int32_t SweepStartTime) {
-    Pulse* LastPulse = &Waveform[LastProcessPointer()];
-    if (LastPulse->Valid and LastPulse->IsSweepPulse and not LastPulse->ReadOut){
-        LastPulse->ReadOut = true;
-        Angles[SweepSource][SweepAxis] = TICKS_TO_RADIANS(LastPulse->RisingEdgeTicks-SweepStartTime);
+void SensorNode::CheckAndHandleSweep(u_int8_t SweepSource, u_int8_t SweepAxis, u_int32_t SweepStartTime,
+                                     u_int8_t CurrentStationLock) {
+    Pulse *LastPulse = &Waveform[LastProcessPointer()];
+    if (LastPulse->Valid and not LastPulse->ReadOut) { //Is this pulse new, and valid?
+        if (LastPulse->IsCertainSweepPulse and CurrentStationLock ==
+                                               DUAL_STATION_LOCK) { // Are we certain its a sweep pulse? And do we have a certain dual lock.
+            LastPulse->ReadOut = true;
+            Angles[SweepSource][SweepAxis] = TICKS_TO_RADIANS(LastPulse->RisingEdgeTicks - SweepStartTime);
+//            Serial.print("Certain Sweep-");
+//            Serial.print(SweepSource);
+//            Serial.print(" - ");
+//            Serial.println(SweepAxis);
+        }
+        else if (LastPulse->IsUncertainShortPulse) { //We are not certain its a sweep, but its too short to accurately measure its width...
+
+        }
     }
 }

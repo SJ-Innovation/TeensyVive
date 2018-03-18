@@ -2,16 +2,24 @@
 // Created by Sam Lane on 11/02/2018.
 //
 //#include "SensorNode.h"
-#include "Timing.h"
-#include "math.h"
+
 
 #ifndef TEENSYVIVE_TEENSY31_CONFIG_H
+
 #define TEENSYVIVE_TEENSY31_CONFIG_H
+
+#include "Timing.h"
+#include "math.h"
 // ====================================HARDWARE CONFIGURATION=====================================
-#define SENSOR_1_PIN 9
-#define SENSOR_2_PIN 10
-#define SENSOR_3_PIN 11
-#define SENSOR_4_PIN 12
+
+typedef struct {
+    int PulsePin;
+    int LED1Pin;
+    int LED2Pin;
+
+} SensorPinData_t;
+
+
 
 // ===============================================================================================
 // ====================================MISC SETTINGS===================================================
@@ -22,14 +30,14 @@
 #define MAX_PULSE_AGE_TICKS US_TO_TICKS(10000)
 // ================================================================================================
 // ====================================PULSE LENGTHS===============================================
-#define SWEEP_PULSE_LENGTH_TICKS_MIN US_TO_TICKS(2)
+#define SWEEP_PULSE_LENGTH_TICKS_MIN US_TO_TICKS(1)
 #define SWEEP_PULSE_LENGTH_TICKS_MAX US_TO_TICKS(15)
 #define FLASH_PULSE_LENGTH_TICKS_MIN US_TO_TICKS(50)
 #define FLASH_PULSE_LENGTH_TICKS_MAX US_TO_TICKS(150)
 
 
 #define PULSETRAIN_START_TICKS US_TO_TICKS(0)
-#define PULSETRAIN_SYNC_DISCREPANCY US_TO_TICKS(10)
+#define PULSETRAIN_SYNC_DISCREPANCY US_TO_TICKS(20)
 #define PULSETRAIN_SYNCA_START_TICKS US_TO_TICKS(0)
 #define PULSETRAIN_SYNCB_START_TICKS US_TO_TICKS(400)
 #define PULSETRAIN_SWEEP_START_TICKS US_TO_TICKS(1222)
@@ -51,6 +59,14 @@
 #define Z_AXiS 2
 #define STATION_A 0
 #define STATION_B 1
+#define LED_OFF 0
+#define LED_RED 1
+#define LED_RED_YELLOW 2
+#define LED_GREEN 3
+#define LED_RED_GREEN 4
+#define NO_STATION_LOCK 0
+#define SINGLE_STATION_LOCK 1
+#define DUAL_STATION_LOCK 2
 
 // ===================================================================================================
 // ====================================SPACE GEOMETRY=================================================
@@ -66,7 +82,7 @@
 
 // ===================================================================================================
 // ====================================MACROS=========================================================
-#define SYNC_PULSE_MEANING(Ticks) ((u_int8_t)((TICKS_TO_VIVE_STANDARD(Ticks)-2501)/500))
+#define SYNC_PULSE_MEANING(Ticks) ((u_int8_t)((TICKS_TO_VIVE_STANDARD((Ticks))-2501)/500))
 #define PULSETRAIN_SWEEP_LENGTH_TICKS (PULSETRAIN_SWEEP_END_TICKS-PULSETRAIN_SWEEP_START_TICKS)
 #define STATION_SWEEP_DEGREES_PER_TICK (STATION_SWEEP_ARC_DEGREES / PULSETRAIN_SWEEP_LENGTH_TICKS)
 #define PULSETRAIN_LENGTH_TICKS (PULSETRAIN_FINISH_TICKS-PULSETRAIN_START_TICKS)
@@ -75,7 +91,7 @@
 #define TICKS_TO_DEGREES(x) ((float)x/(float)TICKS_PER_DEGREE)
 #define DEGREES_TO_TICKS(x) (x*TICKS_PER_DEGREE)
 #define TICKS_PER_RADIAN (((float)PULSETRAIN_SWEEP_END_TICKS-(float)PULSETRAIN_SWEEP_START_TICKS) / ((float)BASESTATION_ROTOR_ANGLE*DEG_TO_RAD))
-#define TICKS_TO_RADIANS(x) ((float)x/(float)TICKS_PER_RADIAN)
+#define TICKS_TO_RADIANS(x) ((float)(x)/(float)TICKS_PER_RADIAN)
 #define RADIANS_TO_TICKS(x) (x*TICKS_PER_RADIAN)
 #define RADIANS_TO_DEGREES(x) (x*RAD_TO_DEG)
 #define DEGREES_TO_RADIANS(x) (x*DEG_TO_RAD)
