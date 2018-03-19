@@ -31,15 +31,15 @@ public:
 
     void Init();
 
-    void RisingEdge(u_int32_t TimeTicks);
+    void RisingEdge(u_int32_t TimeTicks, uint_fast8_t ConseqRise, uint_fast8_t ConseqFall);
 
-    void FallingEdge(u_int32_t TimeTicks);
+    void FallingEdge(u_int32_t TimeTicks, uint_fast8_t ConseqRise, uint_fast8_t ConseqFall);
 
     u_int8_t GetPulsePin();
 
     bool NeedsPulseHandling();
 
-    Pulse* PulseHandler();
+    Pulse *PulseHandler();
 
     int8_t WaveformPointer;
     int8_t ProcessPointer;
@@ -47,8 +47,9 @@ public:
 
     int8_t ProcessPointerOffset(int8_t Offset);
 
-    void CheckAndHandleSweep(u_int8_t SweepSource, u_int8_t SweepAxis, u_int32_t SweepStartTime,
+    bool CheckAndHandleSweep(u_int8_t SweepSource, u_int8_t SweepAxis, u_int32_t SweepStartTime,
                              u_int8_t CurrentStationLock);
+
     float Angles[2][2];
     float Location[3];
 
@@ -65,7 +66,7 @@ private:
 
     int8_t NextProcessPointer();
 
-   // int8_t LastProcessPointer();
+    // int8_t LastProcessPointer();
 
     void IncWaveformPointer();
 

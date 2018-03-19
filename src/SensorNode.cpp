@@ -125,13 +125,17 @@ u_int8_t SensorNode::GetPulsePin() {
     return _PinData.PulsePin;
 }
 
-void SensorNode::RisingEdge(u_int32_t TimeTicks) {
+void SensorNode::RisingEdge(u_int32_t TimeTicks, uint_fast8_t ConseqRise, uint_fast8_t ConseqFall) {
+
     IncWaveformPointer();
     Waveform[WaveformPointer].Valid = false;
     Waveform[WaveformPointer].RisingEdgeTicks = TimeTicks;
 }
 
-void SensorNode::FallingEdge(u_int32_t TimeTicks) {
+void SensorNode::FallingEdge(u_int32_t TimeTicks, uint_fast8_t ConseqRise, uint_fast8_t ConseqFall) {
+    if (ConseqFall > 1) {
+        RisingEdge(TimeTicks, ConseqRise, --ConseqFall);
+    }
     Waveform[WaveformPointer].FallingEdgeTicks = TimeTicks;
     Waveform[WaveformPointer].Valid = false;
 
@@ -139,10 +143,12 @@ void SensorNode::FallingEdge(u_int32_t TimeTicks) {
 
 Pulse *SensorNode::PulseHandler() {
     Pulse *LatestPulse = &Waveform[ProcessPointer];
-    if (LatestPulse->RisingEdgeTicks >
+    if (LatestPulse->RisingEdgeTicks >=
         LatestPulse->FallingEdgeTicks) { // If theyre reversed (weird Interrupt behaviour)
         LatestPulse->PulseDurationTicks = 0;
         LatestPulse->IsUncertainShortPulse = true;
+        LatestPulse->IsCertainSweepPulse = false;
+        LatestPulse->IsCertainSyncPulse = false;
     }
     else {
         LatestPulse->IsUncertainShortPulse = false;
@@ -165,21 +171,35 @@ u_int32_t PulseAge(Pulse &TestPulse) {
     return CURRENT_TIME - TestPulse.RisingEdgeTicks;
 }
 
-void SensorNode::CheckAndHandleSweep(u_int8_t SweepSource, u_int8_t SweepAxis, u_int32_t SweepStartTime,
+bool SensorNode::CheckAndHandleSweep(u_int8_t SweepSource, u_int8_t SweepAxis, u_int32_t SweepStartTime,
                                      u_int8_t CurrentStationLock) {
     Pulse *LastPulse = &Waveform[LastProcessPointer()];
     if (LastPulse->Valid and not LastPulse->ReadOut) { //Is this pulse new, and valid?
         if (LastPulse->IsCertainSweepPulse and CurrentStationLock ==
                                                DUAL_STATION_LOCK) { // Are we certain its a sweep pulse? And do we have a certain dual lock.
             LastPulse->ReadOut = true;
-            Angles[SweepSource][SweepAxis] = TICKS_TO_RADIANS(LastPulse->RisingEdgeTicks - SweepStartTime);
+            float NewAngle = TICKS_TO_RADIANS(LastPulse->RisingEdgeTicks - SweepStartTime);
+            if (IN_RANGE(0, NewAngle, TWO_PI)) {
+                Angles[SweepSource][SweepAxis] = NewAngle;
+                return true;
+            }
 //            Serial.print("Certain Sweep-");
 //            Serial.print(SweepSource);
 //            Serial.print(" - ");
 //            Serial.println(SweepAxis);
         }
-        else if (LastPulse->IsUncertainShortPulse) { //We are not certain its a sweep, but its too short to accurately measure its width...
-
+        else if (LastPulse->IsUncertainShortPulse) { //We are not certain its a sweep, but its too short to accurately measure its width... Might be noise, might be a sweep.
+            LastPulse->ReadOut = true;
+            float NewAngle = TICKS_TO_RADIANS(LastPulse->RisingEdgeTicks - SweepStartTime);
+            if (IN_RANGE(0, NewAngle, TWO_PI)) {
+                if (IN_RANGE(DEGREES_TO_RADIANS(-UNCERTAIN_ANGLE_THRESHOLD), NewAngle - Angles[SweepSource][SweepAxis],
+                             DEGREES_TO_RADIANS(UNCERTAIN_ANGLE_THRESHOLD))) {
+                    Angles[SweepSource][SweepAxis] = NewAngle;
+                }
+                //
+                //return true;
+            }
         }
     }
+    return false;
 }

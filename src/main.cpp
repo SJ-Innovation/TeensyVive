@@ -4,24 +4,32 @@
 #include "config.h"
 #include "SensorNode.h"
 #include "Timing.h"
+#include "OOTX.h"
 
+BaseOOTX OOTX[2] = {STATION_A, STATION_B};
 
 SensorNode Nodes[] = {SENSOR_1_PINS};
 
 #define INTERRUPT_CHANGE_FUNCTION(Pin, ID) \
-{ \
-u_int32_t Now = CURRENT_TIME; \
-    if (digitalReadFast(Pin)) \
-        {Nodes[ID].RisingEdge(Now); \
-    }\
-    else { \
-        Nodes[ID].FallingEdge(Now);\
+    static uint_fast8_t ConsecRise=0;\
+static uint_fast8_t ConsecFall=0;\
+u_int32_t Now = CURRENT_TIME;\
+uint_fast8_t State = digitalReadFast(Pin);\
+if (State){\
+ConsecRise++;\
+Nodes[ID].RisingEdge(Now,ConsecRise,ConsecFall);\
+ConsecFall=0;\
+}\
+else{\
+ConsecFall++;\
+Nodes[ID].FallingEdge(Now,ConsecRise,ConsecFall);\
+ConsecRise = 0;\
 }\
 }
 
 
-void Interrupt0Change() INTERRUPT_CHANGE_FUNCTION(SENSOR_1_PINS.PulsePin, 0);
-
+void Interrupt0Change() {
+INTERRUPT_CHANGE_FUNCTION(SENSOR_1_PINS.PulsePin, 0);
 
 void ConfigureInterrupts() {
     Serial.print("Init Interrupts - ");
@@ -57,6 +65,7 @@ void MainLoop() {
     static u_int8_t NextSweepSource = 0;
     static u_int8_t NextSweepAxis = 0;
     static u_int8_t CurrentStationLock = NO_STATION_LOCK;
+    static bool LastOOTXBit = 0;
 
     Pulse *EarliestSyncDetectedSource = NULL;
     u_int32_t EarlyTrack = 0;
@@ -96,9 +105,11 @@ void MainLoop() {
             if (LastSyncSource == STATION_A and SourceStation ==
                                                 STATION_B) { //Was the last sync pulse from A, and the other from B? If so we have a double lock, same for both we have single lock.
                 CurrentStationLock = DUAL_STATION_LOCK;
+                OOTX[STATION_A].NewOOTXBit(LastOOTXBit);
+                OOTX[STATION_B].NewOOTXBit(DATA(SyncPulseMeaning));
             }
             else {
-                CurrentStationLock = SINGLE_STATION_LOCK;
+                CurrentStationLock = SINGLE_STATION_LOCK; //Not sure which station though.
             }
             if (!SKIP(SyncPulseMeaning)) { //Is the station this sync concerns laser sweeping this time?
                 NextSweepSource = SourceStation; // Expect the next sweep to be from this base
@@ -122,6 +133,7 @@ void MainLoop() {
 //            Serial.print(" NextSweepAxis:");
 //            Serial.println(NextSweepAxis);
             LastSyncSource = SourceStation;
+            LastOOTXBit = DATA(SyncPulseMeaning);
             LastSyncPulseTime = EarliestSyncDetectedSource->RisingEdgeTicks;
         }
         //
@@ -140,17 +152,18 @@ void MainLoop() {
     }
 
     static unsigned long t = 0;
-    if (millis() - t > 100) {
+    if (millis() - t > 1000) {
         t = millis();
-        Serial.print(CurrentStationLock);
-        Serial.print("  A: ");
-        Serial.print(RAD_TO_DEG * (Nodes[0].Angles[STATION_A][HORZ]));
-        Serial.print(" ");
-        Serial.print(RAD_TO_DEG * (Nodes[0].Angles[STATION_A][VERT]));
-        Serial.print(" ");
-        Serial.print(RAD_TO_DEG * (Nodes[0].Angles[STATION_B][HORZ]));
-        Serial.print(" ");
-        Serial.println(RAD_TO_DEG * (Nodes[0].Angles[STATION_B][VERT]));
+        OOTX[STATION_A].PrintBuffer();
+        // Serial.println(CurrentStationLock);
+//        Serial.print("  A: ");
+//        Serial.print(RAD_TO_DEG * (Nodes[0].Angles[STATION_A][HORZ]));
+//        Serial.print(" ");
+//        Serial.print(RAD_TO_DEG * (Nodes[0].Angles[STATION_A][VERT]));
+//        Serial.print(" ");
+//        Serial.print(RAD_TO_DEG * (Nodes[0].Angles[STATION_B][HORZ]));
+//        Serial.print(" ");
+//        Serial.println(RAD_TO_DEG * (Nodes[0].Angles[STATION_B][VERT]));
 
     }
 

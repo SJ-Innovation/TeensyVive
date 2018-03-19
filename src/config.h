@@ -22,13 +22,18 @@ typedef struct {
 
 
 // ===============================================================================================
-// ====================================MISC SETTINGS===================================================
+// ====================================MISC SETTINGS==============================================
 #define SINGLE_STATION_TRACKING
 #define BASESTATION_ROTOR_ANGLE 180
-#define OOTX_FRAME_SIZE 0x21 //TODO OOTX
-#define OOTX_BUFFER_LENGTH  2*OOTX_FRAME_SIZE
 #define MAX_PULSE_AGE_TICKS US_TO_TICKS(10000)
+#define UNCERTAIN_ANGLE_THRESHOLD 10
 // ================================================================================================
+// ====================================OOTX SETTINGS==============================================
+
+#define OOTX_BUFFER_SIZE 2*0x21
+#define OOTX_PREAMBLE_LENGTH 17
+
+// ===============================================================================================
 // ====================================PULSE LENGTHS===============================================
 #define SWEEP_PULSE_LENGTH_TICKS_MIN US_TO_TICKS(1)
 #define SWEEP_PULSE_LENGTH_TICKS_MAX US_TO_TICKS(15)
@@ -92,10 +97,11 @@ typedef struct {
 #define DEGREES_TO_TICKS(x) (x*TICKS_PER_DEGREE)
 #define TICKS_PER_RADIAN (((float)PULSETRAIN_SWEEP_END_TICKS-(float)PULSETRAIN_SWEEP_START_TICKS) / ((float)BASESTATION_ROTOR_ANGLE*DEG_TO_RAD))
 #define TICKS_TO_RADIANS(x) ((float)(x)/(float)TICKS_PER_RADIAN)
+
 #define RADIANS_TO_TICKS(x) (x*TICKS_PER_RADIAN)
 #define RADIANS_TO_DEGREES(x) (x*RAD_TO_DEG)
 #define DEGREES_TO_RADIANS(x) (x*DEG_TO_RAD)
-
+#define OOTX_BUFFER_SIZE_BITS (OOTX_BUFFER_SIZE*8)
 
 #define BIT_BUFFER_WRITE(BitData, BitNum, ByteBuffer) (bitWrite(ByteBuffer[BitNum/8],8-(BitNum%8),BitData))
 #define BIT_BUFFER_READ(BitNum, ByteBuffer) (bitRead(ByteBuffer[BitNum/8],8-(BitNum%8)))
