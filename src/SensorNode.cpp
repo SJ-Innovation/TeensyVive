@@ -9,7 +9,6 @@
 void SensorNode::SetLEDState(int LEDState) {
     static int CurrentLEDState = LED_OFF;
     if (LEDState != CurrentLEDState) {
-        Serial.println("Set");
         switch (LEDState) {
             case LED_OFF:
                 pinMode(_PinData.LED1Pin, INPUT);
@@ -44,9 +43,7 @@ void SensorNode::SetLEDState(int LEDState) {
         }
         CurrentLEDState = LEDState;
     }
-
 }
-
 
 SensorNode::SensorNode(SensorPinData_t PinData) {
     _PinData = PinData;
@@ -111,7 +108,6 @@ void SensorNode::Init() {
     for (int i = 0; i < WAVEFORM_SIZE; i++) {
         Waveform[i].PulseDurationTicks = 0;
         Waveform[i].RisingEdgeTicks = 0;
-        //Waveform[i].LastPulseToThisPulseTicks = 0;
         Waveform[i].FallingEdgeTicks = 0;
     }
     Serial.println(" Complete");
@@ -188,7 +184,7 @@ bool SensorNode::CheckAndHandleSweep(u_int8_t SweepSource, u_int8_t SweepAxis, u
 //            Serial.print(" - ");
 //            Serial.println(SweepAxis);
         }
-        else if (LastPulse->IsUncertainShortPulse) { //We are not certain its a sweep, but its too short to accurately measure its width... Might be noise, might be a sweep.
+        else if (LastPulse->IsUncertainShortPulse) { //We are not certain its a sweep, but its too short to accurately measure its width... Might be noise, might be a sweep. Might also be from another base.
             LastPulse->ReadOut = true;
             float NewAngle = TICKS_TO_RADIANS(LastPulse->RisingEdgeTicks - SweepStartTime);
             if (IN_RANGE(0, NewAngle, TWO_PI)) {
@@ -196,8 +192,7 @@ bool SensorNode::CheckAndHandleSweep(u_int8_t SweepSource, u_int8_t SweepAxis, u
                              DEGREES_TO_RADIANS(UNCERTAIN_ANGLE_THRESHOLD))) {
                     Angles[SweepSource][SweepAxis] = NewAngle;
                 }
-                //
-                //return true;
+                return true;
             }
         }
     }

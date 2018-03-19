@@ -37,8 +37,9 @@ bool BaseOOTX::AttemptParse() {
 bool BaseOOTX::NewOOTXBit(bool NewInBit) {
     static u_int8_t ConsecZeros = 0;
     if (NewInBit) { //1
-        if (ConsecZeros == OOTX_PREAMBLE_LENGTH) {
+        if (ConsecZeros == OOTX_PREAMBLE_LENGTH) { //Have we got the preamble?
             AttemptParse();
+            PrintBuffer();
             ConsecZeros = 0;
             InputPointer = 0;
             memset(InputBuffer, 0, OOTX_BUFFER_SIZE);

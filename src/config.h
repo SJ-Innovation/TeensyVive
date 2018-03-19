@@ -57,21 +57,22 @@ typedef struct {
 #define AXIS(PulseData) ((PulseData & 1) ? 1:0)
 
 #define AXIS_t u_int8_t
-#define HORZ 0
-#define VERT 1
-#define X_AXIS 0
-#define Y_AXIS 1
-#define Z_AXiS 2
-#define STATION_A 0
-#define STATION_B 1
-#define LED_OFF 0
-#define LED_RED 1
-#define LED_RED_YELLOW 2
-#define LED_GREEN 3
-#define LED_RED_GREEN 4
-#define NO_STATION_LOCK 0
-#define SINGLE_STATION_LOCK 1
-#define DUAL_STATION_LOCK 2
+enum DirEnum {
+    HORZ, VERT
+};
+enum AxisEnum {
+    X_AXIS, Y_AXIS, Z_AXIS
+};
+enum StationEnum {
+    STATION_A, STATION_B
+};
+enum LEDEnum {
+    LED_OFF, LED_RED, LED_RED_YELLOW, LED_GREEN, LED_RED_GREEN
+};
+enum LockEnum {
+    NO_STATION_LOCK, SINGLE_STATION_LOCK, DUAL_STATION_LOCK
+};
+
 
 // ===================================================================================================
 // ====================================SPACE GEOMETRY=================================================

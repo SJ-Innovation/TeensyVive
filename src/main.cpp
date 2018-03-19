@@ -40,7 +40,7 @@ void ConfigureInterrupts() {
     Serial.println("Complete");
 }
 
-//char (*__kaboom)[sizeof(float16_t)] = 1;
+//char (*__kaboom)[VERT] = 1;
 
 
 void MainSetup() {
@@ -110,6 +110,9 @@ void MainLoop() {
             }
             else {
                 CurrentStationLock = SINGLE_STATION_LOCK; //Not sure which station though.
+                OOTX[STATION_A].NewOOTXBit(
+                        DATA(SyncPulseMeaning)); //Worth a shot, its an invalid frame anyway if it misses one. This way it might get lucky.
+                OOTX[STATION_B].NewOOTXBit(DATA(SyncPulseMeaning));
             }
             if (!SKIP(SyncPulseMeaning)) { //Is the station this sync concerns laser sweeping this time?
                 NextSweepSource = SourceStation; // Expect the next sweep to be from this base
@@ -154,7 +157,7 @@ void MainLoop() {
     static unsigned long t = 0;
     if (millis() - t > 1000) {
         t = millis();
-        OOTX[STATION_A].PrintBuffer();
+        //OOTX[STATION_A].PrintBuffer();
         // Serial.println(CurrentStationLock);
 //        Serial.print("  A: ");
 //        Serial.print(RAD_TO_DEG * (Nodes[0].Angles[STATION_A][HORZ]));

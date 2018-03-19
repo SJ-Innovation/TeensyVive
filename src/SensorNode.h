@@ -16,11 +16,11 @@ struct Pulse {
     u_int32_t FallingEdgeTicks; //ISR Set
     u_int32_t PulseDurationTicks; //Rising to falling
     //u_int32_t LastPulseToThisPulseTicks;
-    bool Valid;
-    bool IsCertainSyncPulse;
-    bool IsCertainSweepPulse;
-    bool IsUncertainShortPulse;
-    bool ReadOut;
+    bool Valid:1;
+    bool IsCertainSyncPulse:1;
+    bool IsCertainSweepPulse:1;
+    bool IsUncertainShortPulse:1;
+    bool ReadOut:1;
 };
 
 class SensorNode {
