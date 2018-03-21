@@ -1,6 +1,3 @@
-//
-// Created by Sam Lane on 10/02/2018.
-//
 
 #ifndef TEENSYVIVE_TEENSY31_INPUTCHANNEL_H
 #define TEENSYVIVE_TEENSY31_INPUTCHANNEL_H
@@ -9,18 +6,12 @@
 #include "Timing.h"
 #include "config.h"
 
-#define WAVEFORM_SIZE 10
+//#define WAVEFORM_SIZE 10
 
 struct Pulse {
-    u_int32_t RisingEdgeTicks; //ISR Set
-    u_int32_t FallingEdgeTicks; //ISR Set
-    u_int32_t PulseDurationTicks; //Rising to falling
-    //u_int32_t LastPulseToThisPulseTicks;
-    bool Valid:1;
-    bool IsCertainSyncPulse:1;
-    bool IsCertainSweepPulse:1;
-    bool IsUncertainShortPulse:1;
-    bool ReadOut:1;
+    u_int32_t Length;
+    u_int32_t StartTime;
+    bool New:1;
 };
 
 class SensorNode {
@@ -31,51 +22,21 @@ public:
 
     void Init();
 
-    void RisingEdge(u_int32_t TimeTicks, uint_fast8_t ConseqRise, uint_fast8_t ConseqFall);
-
-    void FallingEdge(u_int32_t TimeTicks, uint_fast8_t ConseqRise, uint_fast8_t ConseqFall);
-
     u_int8_t GetPulsePin();
 
-    bool NeedsPulseHandling();
+    void NewSweepInterrupt(u_int32_t PulseLength, u_int32_t PulseStartTime);
 
-    Pulse *PulseHandler();
-
-    int8_t WaveformPointer;
-    int8_t ProcessPointer;
-    Pulse Waveform[WAVEFORM_SIZE];
-
-    int8_t ProcessPointerOffset(int8_t Offset);
-
+    Pulse LatestSweepInterrupt;
     bool CheckAndHandleSweep(u_int8_t SweepSource, u_int8_t SweepAxis, u_int32_t SweepStartTime,
-                             u_int8_t CurrentStationLock);
-
+                             u_int8_t CurrentStationLock, Pulse *Temp);
     float Angles[2][2];
     float Location[3];
-
-    int8_t LastProcessPointer();
 
     void SetLEDState(int LEDState);
 
 protected:
 
 private:
-    void IncProcessPointer();
-
-    void DecProcessPointer();
-
-    int8_t NextProcessPointer();
-
-    // int8_t LastProcessPointer();
-
-    void IncWaveformPointer();
-
-    void DecWaveformPointer();
-
-    int8_t NextWaveformPointer();
-
-    int8_t LastWaveformPointer();
-
     SensorPinData_t _PinData;
 };
 

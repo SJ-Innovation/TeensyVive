@@ -26,7 +26,7 @@ typedef struct {
 #define SINGLE_STATION_TRACKING
 #define BASESTATION_ROTOR_ANGLE 180
 #define MAX_PULSE_AGE_TICKS US_TO_TICKS(10000)
-#define UNCERTAIN_ANGLE_THRESHOLD 10
+#define UNCERTAIN_ANGLE_THRESHOLD DEGREES_TO_RADIANS(10)
 // ================================================================================================
 // ====================================OOTX SETTINGS==============================================
 
@@ -35,14 +35,14 @@ typedef struct {
 
 // ===============================================================================================
 // ====================================PULSE LENGTHS===============================================
-#define SWEEP_PULSE_LENGTH_TICKS_MIN US_TO_TICKS(1)
+#define SWEEP_PULSE_LENGTH_TICKS_MIN US_TO_TICKS(5)
 #define SWEEP_PULSE_LENGTH_TICKS_MAX US_TO_TICKS(15)
-#define FLASH_PULSE_LENGTH_TICKS_MIN US_TO_TICKS(50)
-#define FLASH_PULSE_LENGTH_TICKS_MAX US_TO_TICKS(150)
+#define SYNC_PULSE_LENGTH_TICKS_MIN US_TO_TICKS(50)
+#define SYNC_PULSE_LENGTH_TICKS_MAX US_TO_TICKS(150)
 
 
 #define PULSETRAIN_START_TICKS US_TO_TICKS(0)
-#define PULSETRAIN_SYNC_DISCREPANCY US_TO_TICKS(20)
+#define PULSETRAIN_SYNC_DISCREPANCY US_TO_TICKS(30)
 #define PULSETRAIN_SYNCA_START_TICKS US_TO_TICKS(0)
 #define PULSETRAIN_SYNCB_START_TICKS US_TO_TICKS(400)
 #define PULSETRAIN_SWEEP_START_TICKS US_TO_TICKS(1222)
@@ -52,9 +52,9 @@ typedef struct {
 
 // ================================================================================================
 //==================================== CONSTANTS ====================================================
-#define SKIP(PulseData) ((PulseData & 4) ? 1:0)
-#define DATA(PulseData) ((PulseData & 2) ? 1:0)
-#define AXIS(PulseData) ((PulseData & 1) ? 1:0)
+#define SKIP(PulseData) ((PulseData & B100) ? 1:0)
+#define DATA(PulseData) ((PulseData & B010) ? 1:0)
+#define AXIS(PulseData) ((PulseData & B001) ? 1:0)
 
 #define AXIS_t u_int8_t
 enum DirEnum {
@@ -104,7 +104,7 @@ enum LockEnum {
 #define DEGREES_TO_RADIANS(x) (x*DEG_TO_RAD)
 #define OOTX_BUFFER_SIZE_BITS (OOTX_BUFFER_SIZE*8)
 
-#define BIT_BUFFER_WRITE(BitData, BitNum, ByteBuffer) (bitWrite(ByteBuffer[BitNum/8],8-(BitNum%8),BitData))
-#define BIT_BUFFER_READ(BitNum, ByteBuffer) (bitRead(ByteBuffer[BitNum/8],8-(BitNum%8)))
+#define BIT_BUFFER_WRITE(BitData, BitNum, ByteBuffer) (bitWrite(ByteBuffer[BitNum/8],7-(BitNum%8),BitData))
+#define BIT_BUFFER_READ(BitNum, ByteBuffer) (bitRead(ByteBuffer[BitNum/8],7-(BitNum%8)))
 // ===================================================================================================
 #endif //TEENSYVIVE_TEENSY31_CONFIG_H
