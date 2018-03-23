@@ -82,71 +82,59 @@ void SensorNode::NewSweepInterrupt(u_int32_t PulseLength, u_int32_t PulseStartTi
     LatestSweepInterrupt.New = true;
 }
 
-bool SensorNode::CheckAndHandleSweep(u_int8_t SweepSource, u_int8_t SweepAxis, u_int32_t SweepStartTime,
-                                     u_int8_t CurrentStationLock, Pulse *Temp) {
+
+void SensorNode::MovingAverageAdd(float New, u_int8_t Source, u_int8_t Axis) {
+    AverageAngle[Source][Axis][AverageAnglePointers[Source][Axis]] = New;
+    ++AverageAnglePointers[Source][Axis] %= AVERAGE_SIZE;
+
+}
+
+float SensorNode::MovingAverageCalc(u_int8_t Source, u_int8_t Axis) {
+    float Min=360,Max=0;
+    for (int i = 0; i < AVERAGE_SIZE; i++){
+        float This = AverageAngle[Source][Axis][i];
+        Min = min(Min,This);
+        Max = max(Max,This);
+    }
+//    Serial.print(Min);
+//    Serial.print("  ");
+//    Serial.println(Max);
+    float Total = 0;
+    for (int i = 0; i < AVERAGE_SIZE; i++) {
+        float This = AverageAngle[Source][Axis][i];
+
+//        Serial.print(This);
+//        Serial.print(" - ");
+        Total += This;
+    }
+   // Serial.println(" ");
+
+
+    return Total / (float) AVERAGE_SIZE;
+
+
+}
+
+void SensorNode::PrepareForReading() {
+    Angles[STATION_A][HORZ] = MovingAverageCalc(STATION_A, HORZ);
+    Angles[STATION_A][VERT] = MovingAverageCalc(STATION_A, VERT);
+    Angles[STATION_B][HORZ] = MovingAverageCalc(STATION_B, HORZ);
+    Angles[STATION_B][VERT] = MovingAverageCalc(STATION_B, VERT);
+
+}
+
+bool SensorNode::CheckAndHandleSweep(u_int32_t Now, u_int8_t SweepSource, u_int8_t SweepAxis, u_int32_t SweepStartTime,
+                                     u_int8_t CurrentStationLock) {
     noInterrupts();
     Pulse SafeCopy = LatestSweepInterrupt;
     LatestSweepInterrupt.New = false;
     interrupts();
     if (SafeCopy.New) {
         if (CurrentStationLock == DUAL_STATION_LOCK) {
-            float NewAngle = TICKS_TO_RADIANS(SafeCopy.StartTime - SweepStartTime);
-            Angles[SweepSource][SweepAxis] = NewAngle;
-            Serial.print(CurrentStationLock);
-            Serial.print("  A: ");
-            Serial.print(RAD_TO_DEG * (Angles[STATION_A][HORZ]));
-            Serial.print(" ");
-            Serial.print(RAD_TO_DEG * (Angles[STATION_A][VERT]));
-            Serial.print(" ");
-            Serial.print(RAD_TO_DEG * (Angles[STATION_B][HORZ]));
-            Serial.print(" ");
-            Serial.print(RAD_TO_DEG * (Angles[STATION_B][VERT]));
-            Serial.println(" ");
-            Serial.println(TICKS_TO_US(SafeCopy.StartTime));
-            Serial.println(TICKS_TO_US(SafeCopy.Length));
-            Serial.println(TICKS_TO_US(Temp->StartTime));
-            Serial.println(TICKS_TO_US(Temp->Length));
-
-            Serial.println(" ");
-
+            float NewAngle = TICKS_TO_DEGREES(SafeCopy.StartTime - SweepStartTime);
+            //Angles[SweepSource][SweepAxis] = NewAngle;
+            MovingAverageAdd(NewAngle, SweepSource, SweepAxis);
+            return true;
         }
-        else if (CurrentStationLock == SINGLE_STATION_LOCK) {
-            float NewAngle = TICKS_TO_RADIANS(SafeCopy.StartTime - SweepStartTime);
-            if (IN_RANGE(-UNCERTAIN_ANGLE_THRESHOLD, NewAngle - Angles[SweepSource][SweepAxis],
-                         UNCERTAIN_ANGLE_THRESHOLD)) {
-                //Angles[SweepSource][SweepAxis] = NewAngle;
-            }
-        }
-//        Serial.println(NewAngle);
-//        Serial.println(" ");
     }
 }
-//    Pulse *LastPulse = &Waveform[LastProcessPointer()];
-//    if (LastPulse->Valid and not LastPulse->ReadOut) { //Is this pulse new, and valid?
-//        if (LastPulse->IsCertainSweepPulse and CurrentStationLock ==
-//                                               DUAL_STATION_LOCK) { // Are we certain its a sweep pulse? And do we have a certain dual lock.
-//            LastPulse->ReadOut = true;
-//            float NewAngle = TICKS_TO_RADIANS(LastPulse->RisingEdgeTicks - SweepStartTime);
-//            if (IN_RANGE(0, NewAngle, TWO_PI)) {
-//                Angles[SweepSource][SweepAxis] = NewAngle;
-//                return true;
-//            }
-////            Serial.print("Certain Sweep-");
-////            Serial.print(SweepSource);
-////            Serial.print(" - ");
-////            Serial.println(SweepAxis);
-//        }
-//        else if (LastPulse->IsUncertainShortPulse) { //We are not certain its a sweep, but its too short to accurately measure its width... Might be noise, might be a sweep. Might also be from another base.
-//            LastPulse->ReadOut = true;
-//            float NewAngle = TICKS_TO_RADIANS(LastPulse->RisingEdgeTicks - SweepStartTime);
-//            if (IN_RANGE(0, NewAngle, TWO_PI)) {
-//                if (IN_RANGE(DEGREES_TO_RADIANS(-UNCERTAIN_ANGLE_THRESHOLD), NewAngle - Angles[SweepSource][SweepAxis],
-//                             DEGREES_TO_RADIANS(UNCERTAIN_ANGLE_THRESHOLD))) {
-//                   // Angles[SweepSource][SweepAxis] = NewAngle;
-//                }
-//                return true;
-//            }
-//        }
-//    }
-//    return false;
-//}

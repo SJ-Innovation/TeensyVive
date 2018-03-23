@@ -27,8 +27,20 @@ public:
     void NewSweepInterrupt(u_int32_t PulseLength, u_int32_t PulseStartTime);
 
     Pulse LatestSweepInterrupt;
-    bool CheckAndHandleSweep(u_int8_t SweepSource, u_int8_t SweepAxis, u_int32_t SweepStartTime,
-                             u_int8_t CurrentStationLock, Pulse *Temp);
+#define AVERAGE_SIZE 10
+
+    void MovingAverageAdd(float New, u_int8_t Source, u_int8_t Axis);
+
+    float MovingAverageCalc(u_int8_t Source, u_int8_t Axis);
+
+    float AverageAngle[2][2][AVERAGE_SIZE];
+    u_int8_t AverageAnglePointers[2][2];
+
+    bool CheckAndHandleSweep(u_int32_t Now, u_int8_t SweepSource, u_int8_t SweepAxis, u_int32_t SweepStartTime,
+                             u_int8_t CurrentStationLock);
+
+    void PrepareForReading();
+
     float Angles[2][2];
     float Location[3];
 
