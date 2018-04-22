@@ -76,7 +76,7 @@ u_int8_t SensorNode::GetPulsePin() {
     return _PinData.PulsePin;
 }
 
-void SensorNode::NewSweepInterrupt(u_int32_t PulseLength, u_int32_t PulseStartTime) {
+void SensorNode::NewSweepPinInterrupt(u_int32_t PulseLength, u_int32_t PulseStartTime){
     LatestSweepInterrupt.Length = PulseLength;
     LatestSweepInterrupt.StartTime = PulseStartTime;
     LatestSweepInterrupt.New = true;
@@ -132,7 +132,6 @@ bool SensorNode::CheckAndHandleSweep(u_int32_t Now, u_int8_t SweepSource, u_int8
     if (SafeCopy.New) {
         if (CurrentStationLock == DUAL_STATION_LOCK) {
             float NewAngle = TICKS_TO_DEGREES(SafeCopy.StartTime - SweepStartTime);
-            //Angles[SweepSource][SweepAxis] = NewAngle;
             MovingAverageAdd(NewAngle, SweepSource, SweepAxis);
             return true;
         }

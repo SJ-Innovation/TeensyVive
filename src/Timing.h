@@ -9,10 +9,11 @@
 #include "Arduino.h"
 
 #define BETTER_TIMER 3//0-Micros,1-IntervalTimer,2-EXPDirectFTM 3-PIT
+//TODO write phase locking timer for suriving sync loss
 
 #if BETTER_TIMER == 3
 
-
+void PhaseLockTimeLock(u_int32_t LastHardwareRiseA, u_int32_t LastHardwareRiseB);
 #define TICKS_PER_MICROSECOND ((u_int32_t)((u_int32_t)F_BUS/(u_int32_t)1000000)) // TODO CHANGE F_BUS for OC if REQUIRED
 #define US_TO_TICKS(x) (((x)*TICKS_PER_MICROSECOND))
 #define TICKS_TO_US(x) (((x)/TICKS_PER_MICROSECOND))

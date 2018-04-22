@@ -8,11 +8,11 @@
 
 //#define WAVEFORM_SIZE 10
 
-struct Pulse {
+typedef struct {
     u_int32_t Length;
     u_int32_t StartTime;
     bool New:1;
-};
+} Pulse;
 
 class SensorNode {
 public:
@@ -24,7 +24,7 @@ public:
 
     u_int8_t GetPulsePin();
 
-    void NewSweepInterrupt(u_int32_t PulseLength, u_int32_t PulseStartTime);
+    void NewSweepPinInterrupt(u_int32_t PulseLength, u_int32_t PulseStartTime);
 
     Pulse LatestSweepInterrupt;
 #define AVERAGE_SIZE 10
